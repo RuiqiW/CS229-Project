@@ -5,55 +5,8 @@ import numpy as np
 import open3d as o3d
 from torch.utils.data import Dataset, DataLoader
 
-import os
-
-
-class PointCloudDataset(Dataset):
-    def __init__(self, root_dir, point_list, filename_format):
-        super().__init__()
-        self.root_dir = root_dir
-        self.pointclouds = []
-        self.labels = []
-
-        for line in point_list:
-            pcd_id, label = line.strip().split(',')
-            self.pointclouds.append(filename_format.format(int(pcd_id)))
-            self.labels.append(int(label)-1)
-
-    def __len__(self):
-        return len(self.labels)
-
-    def __getitem__(self, index):
-        pcd_id = self.pointclouds[index]
-        label = self.labels[index]
-        pcd_path = os.path.join(self.root_dir, pcd_id)
-
-        pcd = o3d.io.read_point_cloud(pcd_path)
-        points = torch.from_numpy(np.asarray(pcd.points)).float()
-
-        return points, label
-
-
-class PointNet(torch.nn.Module):
-    """Vanilla PointNet model"""
-
-    def __init__(self, num_classes):
-        super().__init__()
-        self.conv1 = nn.Conv1d(3, 32, 1)
-        self.conv2 = nn.Conv1d(32, 256, 1)
-        self.fc1 = nn.Linear(256, 128)
-        self.fc2 = nn.Linear(128, num_classes)
-
-    def forward(self, x):
-        x = x.transpose(2, 1) # (batch_size, num_points, 3) -> (batch_size, 3, num_points)
-        x = F.relu(self.conv1(x))
-        x = F.relu(self.conv2(x))
-        x = torch.max(x, dim=2)[0] # Global max pooling
-        # x = x.view(-1, 1024)
-
-        x = F.relu(self.fc1(x))
-        x = self.fc2(x)
-        return F.log_softmax(x, dim=1)
+from dataset import PointCloudDataset
+from model import VanillaPointNet
 
 
 def train(model, train_loader, optimizer, criterion, num_epoches, device):
@@ -82,8 +35,8 @@ def train(model, train_loader, optimizer, criterion, num_epoches, device):
 
 if __name__ == '__main__':
     
-    root_dir = 'data/12_pcd/'
-    image_list_file = 'data/12_meshMNIST/labels.txt'
+    root_dir = '../data/12_pcd/'
+    image_list_file = '../data/12_meshMNIST/labels.txt'
     filename_format = "{:04d}.ply"
 
     # Set the split ratios
@@ -119,7 +72,7 @@ if __name__ == '__main__':
 
 
     # Initialize the model and optimizer
-    model = PointNet(num_classes=2)
+    model = VanillaPointNet(num_classes=2)
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
     # Set the device to GPU if available

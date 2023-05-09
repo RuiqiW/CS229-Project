@@ -1,80 +1,12 @@
-import os
-import random
-
 import torch
 from torch.utils.data import Dataset, DataLoader
-from PIL import Image
 
 import torch.nn as nn
 import torch.optim as optim
 from torchvision import datasets, transforms
 
-
-class ImageDataset(Dataset):
-    def __init__(self, root_dir, image_list, filename_format, transform=None):
-        self.root_dir = root_dir
-        self.transform = transform
-        self.images = []
-        self.labels = []
-
-        for line in image_list:
-            image_id, label = line.strip().split(',')
-            self.images.append(filename_format.format(int(image_id)))
-            self.labels.append(int(label)-1)
-
-    def __len__(self):
-        return len(self.images)
-
-    def __getitem__(self, index):
-        image_id = self.images[index]
-        label = self.labels[index]
-        image_path = os.path.join(self.root_dir, image_id)
-
-        with open(image_path, 'rb') as f:
-            image = Image.open(f).convert('L')
-
-        if self.transform:
-            image = self.transform(image)
-
-        return image, label
-
-
-
-class CNN(nn.Module):
-    def __init__(self, num_classes):
-        super(CNN, self).__init__()
-        self.conv1 = nn.Conv2d(1, 16, kernel_size=3)
-        self.conv2 = nn.Conv2d(16, 32, kernel_size=3)
-        self.fc1 = nn.Linear(5408, 128)
-        self.fc2 = nn.Linear(128, num_classes)
-
-    def forward(self, x):
-        x = self.conv1(x)
-        x = nn.functional.relu(x)
-        x = self.conv2(x)
-        x = nn.functional.relu(x)
-        x = nn.functional.max_pool2d(x, 4)
-        x = torch.flatten(x, 1)
-        x = self.fc1(x)
-        x = nn.functional.relu(x)
-        x = self.fc2(x)
-        return nn.functional.log_softmax(x, dim=1)
-    
-
-class MLP(nn.Module):
-    def __init__(self, num_classes):
-        super(MLP, self).__init__()
-        self.fc = nn.Linear(56*56, 2048)
-        self.fc1 = nn.Linear(2048, 128)
-        self.fc2 = nn.Linear(128, num_classes)
-
-    def forward(self, x):
-        x = self.fc(x.view(-1, 56*56))
-        x = nn.functional.relu(x)
-        x = self.fc1(x)
-        x = nn.functional.relu(x)
-        x = self.fc2(x)
-        return nn.functional.log_softmax(x, dim=1)
+from dataset import ImageDataset
+from model import MLP, CNN
 
 
 transform = transforms.Compose([
@@ -82,8 +14,8 @@ transform = transforms.Compose([
 ])
 
 # Set the paths and filenames
-root_dir = 'data/12_proj/'
-image_list_file = 'data/12_meshMNIST/labels.txt'
+root_dir = '../data/12_proj/'
+image_list_file = '../data/12_meshMNIST/labels.txt'
 filename_format = "{:04d}.png"
 
 # Set the split ratios
