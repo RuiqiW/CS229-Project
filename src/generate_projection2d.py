@@ -13,9 +13,24 @@ import os
 
 
 W, H = 112, 112
+RAND = True
 
-mesh_dir = 'data/12_meshMNIST/'
-output_dir = 'data/12_proj/'
+def qvec2rotmat(qvec):
+    return np.array([
+        [1 - 2 * qvec[2]**2 - 2 * qvec[3]**2,
+         2 * qvec[1] * qvec[2] - 2 * qvec[0] * qvec[3],
+         2 * qvec[3] * qvec[1] + 2 * qvec[0] * qvec[2]],
+        [2 * qvec[1] * qvec[2] + 2 * qvec[0] * qvec[3],
+         1 - 2 * qvec[1]**2 - 2 * qvec[3]**2,
+         2 * qvec[2] * qvec[3] - 2 * qvec[0] * qvec[1]],
+        [2 * qvec[3] * qvec[1] - 2 * qvec[0] * qvec[2],
+         2 * qvec[2] * qvec[3] + 2 * qvec[0] * qvec[1],
+         1 - 2 * qvec[1]**2 - 2 * qvec[2]**2]])
+
+
+
+mesh_dir = '../data/12_meshMNIST/'
+output_dir = '../data/12_single_view' if RAND else '../data/12_proj/'
 
 renderer = pyrender.OffscreenRenderer(W, H)
 pyrender_camera = pyrender.camera.OrthographicCamera(1.0, 1.0)
@@ -23,6 +38,7 @@ pyrender_camera = pyrender.camera.OrthographicCamera(1.0, 1.0)
 T = np.identity(4)
 T[0:3, 0:3] = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
 T[0:3, 3] = np.array([0.5, 0.5, -1])
+
 
 for filename in os.listdir(mesh_dir):
     name, suffix = filename.split('.')
@@ -37,7 +53,25 @@ for filename in os.listdir(mesh_dir):
 
     # Creates the scene and adds the mesh.
     scene = pyrender.Scene()
-    scene.add(mesh)
+    node = scene.add(mesh)
+
+    if RAND:
+        # Generate random pose
+        q = np.random.randn(4)
+        q /= np.linalg.norm(q)
+        R = qvec2rotmat(q)
+        rot = np.identity(4)
+        rot[0:3, 0:3] = R
+
+        t1 = np.identity(4)
+        t1[0:3, 3] = -mesh.centroid
+        t2 = np.identity(4)
+        t2[0:3, 3] = mesh.centroid
+
+        pose = t2 @ rot @ t1
+        scene.set_pose(node, pose)
+
+    
     cam_node = scene.add(pyrender_camera, pose=T)
 
     # pyrender.Viewer(scene, use_raymond_lighting=True)
