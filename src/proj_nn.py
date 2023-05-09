@@ -52,7 +52,7 @@ test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
 
 
 # Initialize the neural network model and optimizer
-model = MLP(num_classes=2)
+model = CNN(num_classes=2)
 optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.5)
 
 # Train the model
