@@ -18,7 +18,7 @@ class ImageDataset(Dataset):
         for line in data_list:
             data_id, label = line.strip().split(',')
             self.images.append(filename_format.format(int(data_id)))
-            self.labels.append(int(label)-1)
+            self.labels.append(int(label))
 
     def __len__(self):
         return len(self.images)
@@ -48,7 +48,7 @@ class PointCloudDataset(Dataset):
         for line in data_list:
             data_id, label = line.strip().split(',')
             self.pointclouds.append(filename_format.format(int(data_id)))
-            self.labels.append(int(label)-1)
+            self.labels.append(int(label))
 
     def __len__(self):
         return len(self.labels)
@@ -74,7 +74,7 @@ class VoxelDataset(Dataset):
         for line in data_list:
             data_id, label = line.strip().split(',')
             self.voxels.append(filename_format.format(int(data_id)))
-            self.labels.append(int(label)-1)
+            self.labels.append(int(label))
 
     def __len__(self):
         return len(self.labels)

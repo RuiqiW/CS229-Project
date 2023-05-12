@@ -2,14 +2,18 @@ import open3d as o3d
 import os
 
 
+PREFIX = 'train'
+mesh_dir = '../data/{}_meshMNIST/'.format(PREFIX)
+output_dir = '../data/{}_pcd'.format(PREFIX)
 
-mesh_dir = 'data/12_meshMNIST/'
-output_dir = 'data/12_pcd/'
-
+idx = 0
 
 for filename in os.listdir(mesh_dir):
     name, suffix = filename.split('.')
-    print(name)
+    
+    if idx % 1000 == 0:
+        print(idx)
+
     if suffix != 'obj':
         continue  
 
@@ -21,3 +25,5 @@ for filename in os.listdir(mesh_dir):
     # o3d.visualization.draw_geometries([pcd])
 
     o3d.io.write_point_cloud(os.path.join(output_dir, name + '.ply'), pcd, write_ascii=True)
+
+    idx += 1

@@ -5,12 +5,18 @@ import os
 
 VOXEL_DIMS = [36, 36, 8]
 
-mesh_dir = '../data/12_meshMNIST/'
-output_dir = '../data/12_voxel/'
+PREFIX = 'train'
+mesh_dir = '../data/{}_meshMNIST/'.format(PREFIX)
+output_dir = '../data/{}_voxel'.format(PREFIX)
+
+idx = 0
 
 for filename in os.listdir(mesh_dir):
     name, suffix = filename.split('.')
-    print(name)
+    
+    if idx % 1000 == 0:
+        print(idx)
+
     if suffix != 'obj':
         continue  
 
@@ -28,10 +34,9 @@ for filename in os.listdir(mesh_dir):
 
     # voxel grid size
     size = np.max(np.vstack(indices), axis=0) + 1
-    print(size)
     arr = np.zeros(size).astype(np.int8)
-    for idx in indices:
-        arr[tuple(idx)] = 1
+    for grid_idx in indices:
+        arr[tuple(grid_idx)] = 1
 
     # pad voxel grid
     pad_width = [((VOXEL_DIMS[i] - size[i]) // 2, (VOXEL_DIMS[i] - size[i] + 1) // 2) for i in range(3)]
@@ -39,4 +44,6 @@ for filename in os.listdir(mesh_dir):
 
     with open(os.path.join(output_dir, name + '.npy'), 'wb') as f:
         np.save(f, voxels)
+
+    idx += 1
 

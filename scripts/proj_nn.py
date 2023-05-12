@@ -14,7 +14,7 @@ transform = transforms.Compose([
 ])
 
 # Set the paths and filenames
-root_dir = '../data/12_proj/'
+root_dir = '../data/12_single_view/'
 image_list_file = '../data/12_meshMNIST/labels.txt'
 filename_format = "{:04d}.png"
 
