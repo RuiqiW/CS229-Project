@@ -2,6 +2,7 @@ import torch
 import numpy as np
 import open3d as o3d
 from torch.utils.data import Dataset, DataLoader
+import torch.nn.functional as F
 
 from PIL import Image
 
@@ -60,6 +61,7 @@ class PointCloudDataset(Dataset):
 
         pcd = o3d.io.read_point_cloud(data_path)
         points = torch.from_numpy(np.asarray(pcd.points)).float()
+        points = points - torch.mean(points, dim=0)
 
         return points, label
 
