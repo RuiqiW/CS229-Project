@@ -13,7 +13,7 @@ import os
 
 
 W, H = 112, 112
-RAND = True
+RAND = False
 
 def qvec2rotmat(qvec):
     return np.array([
@@ -30,7 +30,7 @@ def qvec2rotmat(qvec):
 
 PREFIX = 'train'
 mesh_dir = '../data/{}_meshMNIST/'.format(PREFIX)
-output_dir = '../data/{}_single_view'.format(PREFIX) if RAND else '../data/{}_proj/'.format()
+output_dir = '../data/{}_single_view'.format(PREFIX) if RAND else '../data/{}_proj/'.format(PREFIX)
 
 renderer = pyrender.OffscreenRenderer(W, H)
 pyrender_camera = pyrender.camera.OrthographicCamera(1.0, 1.0)
