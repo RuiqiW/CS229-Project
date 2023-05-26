@@ -7,6 +7,7 @@ import torch.nn.functional as F
 from PIL import Image
 
 import os
+import copy
 
 
 class ImageDataset(Dataset):
@@ -40,11 +41,12 @@ class ImageDataset(Dataset):
 
 
 class PointCloudDataset(Dataset):
-    def __init__(self, root_dir, data_list, filename_format):
+    def __init__(self, root_dir, data_list, filename_format, use_feature=False):
         super().__init__()
         self.root_dir = root_dir
         self.pointclouds = []
         self.labels = []
+        self.use_feature = use_feature
 
         for line in data_list:
             data_id, label = line.strip().split(',')
@@ -60,10 +62,33 @@ class PointCloudDataset(Dataset):
         data_path = os.path.join(self.root_dir, data_id)
 
         pcd = o3d.io.read_point_cloud(data_path)
-        points = torch.from_numpy(np.asarray(pcd.points)).float()
-        points = points - torch.mean(points, dim=0)
+
+        if not self.use_feature:
+            points = torch.from_numpy(np.asarray(pcd.points)).float()
+            points = points - torch.mean(points, dim=0)
+
+        else:
+            features = self.get_fpfh_feature(pcd)
+            points = torch.from_numpy(copy.deepcopy(features.data)).float() # 33, P
+            points = torch.transpose(points, 0, 1)
 
         return points, label
+    
+
+    def get_fpfh_feature(self, pcd, voxel_size=0.02, radius_normal_factor=2, radius_feature_factor=2):
+        # pcd_down = pcd.voxel_down_sample(voxel_size)
+        pcd_down = pcd
+        
+        radius_normal = voxel_size * radius_normal_factor
+        pcd_down.estimate_normals(
+            o3d.geometry.KDTreeSearchParamHybrid(radius=radius_normal, max_nn=30))
+        
+        radius_feature = voxel_size * radius_feature_factor
+        pcd_fpfh = o3d.pipelines.registration.compute_fpfh_feature(
+        pcd_down,
+        o3d.geometry.KDTreeSearchParamHybrid(radius=radius_feature, max_nn=100))
+        
+        return pcd_fpfh
 
 
 class VoxelDataset(Dataset):
