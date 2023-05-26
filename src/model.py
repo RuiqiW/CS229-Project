@@ -39,7 +39,10 @@ class CNN(nn.Module):
     
 
 
-class VanillaPointNet(torch.nn.Module):
+#-------------------------------------------------------------
+# Models for Milestone
+
+class VanillaPointNet1(torch.nn.Module):
     """Vanilla PointNet model"""
 
     def __init__(self, num_classes):
@@ -58,9 +61,9 @@ class VanillaPointNet(torch.nn.Module):
         return F.log_softmax(x, dim=1)
     
 
-class VoxelCNN(nn.Module):
+class VoxelCNN1(nn.Module):
     def __init__(self, num_classes):
-        super(VoxelCNN, self).__init__()
+        super(VoxelCNN1, self).__init__()
         self.conv1 = nn.Conv3d(1, 2, kernel_size=3, padding=1)
         # self.fc1 = nn.Linear(576, 128)
         self.fc2 = nn.Linear(72, num_classes)
