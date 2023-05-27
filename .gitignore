@@ -4,6 +4,7 @@ __pycache__/
 data/
 plots/
 runs/
+*.zip
 
 # Distribution / packaging
 .Python
