@@ -3,6 +3,7 @@ import numpy as np
 import open3d as o3d
 from torch.utils.data import Dataset, DataLoader
 import torch.nn.functional as F
+import pytorch3d.transforms as transform3d
 
 from PIL import Image
 
@@ -41,11 +42,12 @@ class ImageDataset(Dataset):
 
 
 class PointCloudDataset(Dataset):
-    def __init__(self, root_dir, data_list, filename_format, use_feature=False):
+    def __init__(self, root_dir, data_list, filename_format, use_augmentation=False, use_feature=False):
         super().__init__()
         self.root_dir = root_dir
         self.pointclouds = []
         self.labels = []
+        self.use_augmentation = use_augmentation
         self.use_feature = use_feature
 
         for line in data_list:
@@ -67,6 +69,10 @@ class PointCloudDataset(Dataset):
             points = torch.from_numpy(np.asarray(pcd.points)).float()
             points = points - torch.mean(points, dim=0)
 
+            if self.use_augmentation:
+                rotation = transform3d.random_rotation()
+                T = transform3d.Rotate(rotation)
+                points = T.transform_points(points)
         else:
             features = self.get_fpfh_feature(pcd)
             points = torch.from_numpy(copy.deepcopy(features.data)).float() # 33, P

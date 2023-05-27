@@ -62,7 +62,7 @@ if __name__ == '__main__':
     
     elif DATA_FORMAT == 'pcd':
         filename_format = "{:05d}.ply"
-        train_dataset = PointCloudDataset(ROOT_DIR, train_lines, filename_format=filename_format)
+        train_dataset = PointCloudDataset(ROOT_DIR, train_lines, filename_format=filename_format, use_augmentation=True)
         val_dataset = PointCloudDataset(ROOT_DIR, val_lines, filename_format=filename_format)
         test_dataset = PointCloudDataset(ROOT_DIR, test_lines, filename_format=filename_format)
 
@@ -86,6 +86,9 @@ if __name__ == '__main__':
     
     optimizer = optim.Adam(model.parameters(), lr=0.01)
     criterion = nn.CrossEntropyLoss()
+
+    print("data format: ", DATA_FORMAT)
+    print("model: ", model.__class__.__name__)
 
 
     for epoch in range(EPOCHS):
