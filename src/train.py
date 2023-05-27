@@ -9,6 +9,7 @@ from tqdm import tqdm
 
 from dataset import ImageDataset, PointCloudDataset, VoxelDataset
 from model import MLP, CNN, VanillaPointNet, VoxelCNN
+from pointnet import PointNetMini
 
 
 DATA_FORMATS = ['single_view','pcd', 'voxel']
@@ -62,11 +63,12 @@ if __name__ == '__main__':
     
     elif DATA_FORMAT == 'pcd':
         filename_format = "{:05d}.ply"
-        train_dataset = PointCloudDataset(ROOT_DIR, train_lines, filename_format=filename_format, use_augmentation=True)
+        train_dataset = PointCloudDataset(ROOT_DIR, train_lines, filename_format=filename_format, use_augmentation=False)
         val_dataset = PointCloudDataset(ROOT_DIR, val_lines, filename_format=filename_format)
         test_dataset = PointCloudDataset(ROOT_DIR, test_lines, filename_format=filename_format)
 
-        model = VanillaPointNet(num_classes=10)
+        # model = VanillaPointNet(num_classes=10)
+        model = PointNetMini(num_classes=10)
 
     elif DATA_FORMAT == 'voxel':
         filename_format = "{:05d}.npy"

@@ -28,7 +28,7 @@ threshold = 0.02
 
 
 DATA_LABELS = '../data/train_meshMNIST/labels.txt'
-DATA_FORMAT = 'pcd'
+DATA_FORMAT = 'single_view'
 ROOT_DIR = '../data/train_{}'.format(DATA_FORMAT)
 
 
@@ -167,7 +167,7 @@ if __name__ == '__main__':
         knn.fit(X_train, y_train)
         print("fitted")
         acc_knn = knn.score(X_test, y_test)
-        print("KNN (k={})\nTest accuracy = {:.2f}".format(n_neighbors, acc_knn))
+        print("KNN (k={})\nTest accuracy = {:.4f}".format(n_neighbors, acc_knn))
 
         
     else:
@@ -213,7 +213,7 @@ if __name__ == '__main__':
             plt.figure()
             plt.scatter(X_tsne[:, 0], X_tsne[:, 1], c=y_test, s=30, cmap="Set1")
             plt.title(
-                "{}, KNN (k={})\nTest accuracy = {:.2f}".format(name, n_neighbors, acc_knn)
+                "{}, KNN (k={})\nTest accuracy = {:.4f}".format(name, n_neighbors, acc_knn)
             )
             plt.show()
 
