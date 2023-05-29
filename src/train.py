@@ -9,7 +9,7 @@ from tqdm import tqdm
 
 from dataset import ImageDataset, PointCloudDataset, VoxelDataset
 from model import MLP, CNN, VanillaPointNet, VoxelCNN
-from pointnet import PointNetMini
+from pointnet import PointNetMini, feature_transform_regularizer
 
 torch.manual_seed(1234)
 
@@ -18,12 +18,14 @@ DATA_FORMATS = ['single_view','pcd', 'voxel']
 
 PREFIX = 'train'
 
-DATA_FORMAT = 'voxel'
+DATA_FORMAT = 'pcd'
 ROOT_DIR = '../data/train_{}'.format(DATA_FORMAT)
 DATA_LABELS = '../data/train_meshMNIST/labels.txt'
 
 BATCH_SIZE = 128
-EPOCHS = 30
+EPOCHS = 100
+
+USE_FEATURE_TRANSFORM = False
 
 transform = transforms.Compose([
     transforms.ToTensor()
@@ -65,12 +67,12 @@ if __name__ == '__main__':
     
     elif DATA_FORMAT == 'pcd':
         filename_format = "{:05d}.ply"
-        train_dataset = PointCloudDataset(ROOT_DIR, train_lines, filename_format=filename_format, use_augmentation=False)
+        train_dataset = PointCloudDataset(ROOT_DIR, train_lines, filename_format=filename_format, use_augmentation=True)
         val_dataset = PointCloudDataset(ROOT_DIR, val_lines, filename_format=filename_format)
         test_dataset = PointCloudDataset(ROOT_DIR, test_lines, filename_format=filename_format)
 
-        model = VanillaPointNet(num_classes=10)
-        # model = PointNetMini(num_classes=10)
+        # model = VanillaPointNet(num_classes=10)
+        model = PointNetMini(num_classes=10, feature_transform=USE_FEATURE_TRANSFORM)
 
     elif DATA_FORMAT == 'voxel':
         filename_format = "{:05d}.npy"
@@ -106,11 +108,18 @@ if __name__ == '__main__':
             data = data.to(device)
             target =  target.to(device)
             optimizer.zero_grad()
-            output = model(data)
+
+            if USE_FEATURE_TRANSFORM:
+                output, trans = model(data)
+            else:
+                output = model(data)
             loss = criterion(output, target)
             train_loss += loss.item()
             pred = output.argmax(dim=1, keepdim=True)
             correct += pred.eq(target.view_as(pred)).sum().item()
+
+            if USE_FEATURE_TRANSFORM:
+                loss += 0.001 * feature_transform_regularizer(trans)
             loss.backward()
             optimizer.step()
 
@@ -126,7 +135,10 @@ if __name__ == '__main__':
             for batch_idx, (data, target) in enumerate(tqdm(val_loader)):
                 data = data.to(device)
                 target = target.to(device)
-                output = model(data)
+                if USE_FEATURE_TRANSFORM:
+                    output, trans = model(data)
+                else:
+                    output = model(data)
                 val_loss += criterion(output, target)
                 pred = output.argmax(dim=1, keepdim=True)
                 correct += pred.eq(target.view_as(pred)).sum().item()
@@ -145,7 +157,10 @@ if __name__ == '__main__':
             for batch_idx, (data, target) in enumerate(tqdm(test_loader)):
                 data = data.to(device)
                 target = target.to(device)
-                output = model(data)
+                if USE_FEATURE_TRANSFORM:
+                    output, trans = model(data)
+                else:
+                    output = model(data)
                 test_loss += criterion(output, target)
                 pred = output.argmax(dim=1, keepdim=True)
                 correct += pred.eq(target.view_as(pred)).sum().item()
