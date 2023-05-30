@@ -13,7 +13,7 @@ import os
 
 
 W, H = 112, 112
-RAND = True
+RAND = False
 
 def qvec2rotmat(qvec):
     return np.array([
@@ -42,7 +42,7 @@ def axis_angle_to_quaternion(axis, angle):
 
 PREFIX = 'train'
 mesh_dir = '../data/{}_meshMNIST/'.format(PREFIX)
-output_dir = '../data/{}_multi_view'.format(PREFIX)
+output_dir = '../data/{}_multi_view_upright'.format(PREFIX)
 
 renderer = pyrender.OffscreenRenderer(W, H)
 pyrender_camera = pyrender.camera.OrthographicCamera(1.0, 1.0)
@@ -64,7 +64,7 @@ for axis in [[1, 0, 0], [0, 1, 0], [0, 0, 1]]:
 
 
 idx = 0
-# for filename in ['00001.obj']:
+# for filename in ['00001.obj', '00002.obj']:
 for filename in os.listdir(mesh_dir):
     name, suffix = filename.split('.')
     # print(name)
@@ -97,9 +97,14 @@ for filename in os.listdir(mesh_dir):
         rot = np.identity(4)
         rot[0:3, 0:3] = R
 
-        # pose = t2 @ rot @ t1
-        # scene.set_pose(node, pose)
+    else:
+        angle = np.random.rand() * 360
 
+        qvec = axis_angle_to_quaternion([0, 1, 0], angle)
+        R = qvec2rotmat(qvec)
+        rot = np.identity(4)
+        rot[0:3, 0:3] = R
+        
     
     cam_node = scene.add(pyrender_camera, pose=T)
 
@@ -109,7 +114,7 @@ for filename in os.listdir(mesh_dir):
         if RAND:
             pose = t2 @ R @ rot @ t1
         else:
-            pose = t2 @ R @ t1
+            pose = t2 @ R @ rot @ t1
         scene.set_pose(node, pose)
 
         # pyrender.Viewer(scene, use_raymond_lighting=True)
