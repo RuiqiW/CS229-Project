@@ -19,13 +19,13 @@ DATA_FORMATS = ['single_view', 'multi_view', 'pcd', 'voxel']
 PREFIX = 'train'
 
 DATA_FORMAT = 'multi_view'
-NUM_VIEWS = 4
-ROOT_DIR = '../data/train_{}'.format(DATA_FORMAT)
+NUM_VIEWS = 8
+ROOT_DIR = '../data/train_{}_upright'.format(DATA_FORMAT)
 DATA_LABELS = '../data/train_meshMNIST/labels.txt'
 
 
 BATCH_SIZE = 128
-EPOCHS = 100
+EPOCHS = 30
 
 USE_FEATURE_TRANSFORM = False
 
@@ -64,8 +64,10 @@ if __name__ == '__main__':
         train_dataset = ImageDataset(ROOT_DIR, train_lines, filename_format=filename_format, transform=transform)
         val_dataset = ImageDataset(ROOT_DIR, val_lines, filename_format=filename_format, transform=transform)
         test_dataset = ImageDataset(ROOT_DIR, test_lines, filename_format=filename_format, transform=transform)
+        
 
         model = CNN(num_classes=10)
+        optimizer = optim.Adam(model.parameters(), lr=0.003)
 
     elif DATA_FORMAT == 'multi_view':
         filename_format = "{:05d}.npy"
@@ -74,6 +76,7 @@ if __name__ == '__main__':
         test_dataset = MultiViewDataset(ROOT_DIR, test_lines, filename_format=filename_format, num_views=NUM_VIEWS)
 
         model = MultiViewCNN(num_classes=10, num_views=NUM_VIEWS)
+        optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-5)
     
     elif DATA_FORMAT == 'pcd':
         filename_format = "{:05d}.ply"
@@ -83,6 +86,7 @@ if __name__ == '__main__':
 
         # model = VanillaPointNet(num_classes=10)
         model = PointNetMini(num_classes=10, feature_transform=USE_FEATURE_TRANSFORM)
+        optimizer = optim.Adam(model.parameters(), lr=0.003)
 
     elif DATA_FORMAT == 'voxel':
         filename_format = "{:05d}.npy"
@@ -91,17 +95,17 @@ if __name__ == '__main__':
         test_dataset = VoxelDataset(ROOT_DIR, test_lines, filename_format=filename_format)
 
         model = VoxelCNN(num_classes=10)
+        optimizer = optim.Adam(model.parameters(), lr=0.003)
     else:
         raise NotImplementedError('Data format not supported')
 
-    device = "cpu"
+    device = "cuda"
     model = model.to(device)
     train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False)
     test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
 
     
-    optimizer = optim.Adam(model.parameters(), lr=0.003)
     criterion = nn.CrossEntropyLoss()
 
     print("data format: ", DATA_FORMAT)
