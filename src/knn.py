@@ -28,7 +28,7 @@ threshold = 0.02
 
 
 DATA_LABELS = '../data/train_meshMNIST/labels.txt'
-DATA_FORMAT = 'single_view'
+DATA_FORMAT = 'multi_view_upright'
 ROOT_DIR = '../data/train_{}'.format(DATA_FORMAT)
 
 
@@ -45,6 +45,9 @@ def get_data(data_path):
     elif DATA_FORMAT == 'pcd':
         pcd = o3d.io.read_point_cloud(data_path)
         data = np.asarray(pcd.points)
+    elif DATA_FORMAT == 'multi_view_upright':
+        with open(data_path, 'rb') as f:
+            data = np.load(f)[0, :, :]
     return data.flatten()
 
 
@@ -89,7 +92,7 @@ if __name__ == '__main__':
 
     if DATA_FORMAT == 'proj' or DATA_FORMAT == 'single_view':
         filename_format = "{:05d}.png" 
-    elif DATA_FORMAT == 'voxel':
+    elif DATA_FORMAT == 'voxel' or DATA_FORMAT == 'multi_view_upright':
         filename_format = "{:05d}.npy"
     elif DATA_FORMAT == 'pcd':
         filename_format = "{:05d}.ply"

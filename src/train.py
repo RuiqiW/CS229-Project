@@ -14,13 +14,13 @@ from pointnet import PointNetMini, feature_transform_regularizer
 torch.manual_seed(1234)
 
 
-DATA_FORMATS = ['single_view', 'multi_view', 'pcd', 'voxel']
+DATA_FORMATS = ['single_view', 'multi_view', 'multi_view_upright', 'pcd', 'voxel']
 
 PREFIX = 'train'
 
-DATA_FORMAT = 'multi_view'
-NUM_VIEWS = 8
-ROOT_DIR = '../data/train_{}_upright'.format(DATA_FORMAT)
+DATA_FORMAT = 'multi_view_upright'
+NUM_VIEWS = 1
+ROOT_DIR = '../data/train_{}'.format(DATA_FORMAT)
 DATA_LABELS = '../data/train_meshMNIST/labels.txt'
 
 
@@ -69,14 +69,18 @@ if __name__ == '__main__':
         model = CNN(num_classes=10)
         optimizer = optim.Adam(model.parameters(), lr=0.003)
 
-    elif DATA_FORMAT == 'multi_view':
+    elif DATA_FORMAT == 'multi_view' or DATA_FORMAT == 'multi_view_upright':
         filename_format = "{:05d}.npy"
         train_dataset = MultiViewDataset(ROOT_DIR, train_lines, filename_format=filename_format, num_views=NUM_VIEWS)
         val_dataset = MultiViewDataset(ROOT_DIR, val_lines, filename_format=filename_format, num_views=NUM_VIEWS)
         test_dataset = MultiViewDataset(ROOT_DIR, test_lines, filename_format=filename_format, num_views=NUM_VIEWS)
 
-        model = MultiViewCNN(num_classes=10, num_views=NUM_VIEWS)
-        optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-5)
+        if NUM_VIEWS > 1:
+            model = MultiViewCNN(num_classes=10, num_views=NUM_VIEWS)
+            optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-5)
+        else:
+            model = CNN(num_classes=10)
+            optimizer = optim.Adam(model.parameters(), lr=0.003)
     
     elif DATA_FORMAT == 'pcd':
         filename_format = "{:05d}.ply"
