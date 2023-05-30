@@ -40,6 +40,35 @@ class ImageDataset(Dataset):
         return image, label
 
 
+class MultiViewDataset(Dataset):
+    def __init__(self, root_dir, data_list, filename_format, num_views=12):
+        super().__init__()
+        self.num_views = num_views
+        self.root_dir = root_dir
+        self.images = []
+        self.labels = []
+
+        for line in data_list:
+            data_id, label = line.strip().split(',')
+            self.images.append(filename_format.format(int(data_id)))
+            self.labels.append(int(label))
+
+    def __len__(self):
+        return len(self.labels)
+
+    def __getitem__(self, index):
+        data_id = self.images[index]
+        label = self.labels[index]
+        data_path = os.path.join(self.root_dir, data_id)
+
+        with open(data_path, 'rb') as f:
+            images = np.load(f)
+
+        images = images[:self.num_views, :, :]
+        images = torch.from_numpy(images).float()
+
+        return images, label
+    
 
 class PointCloudDataset(Dataset):
     def __init__(self, root_dir, data_list, filename_format, use_augmentation=False, use_feature=False):

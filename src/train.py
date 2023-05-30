@@ -7,20 +7,22 @@ from torch.utils.tensorboard import SummaryWriter
 
 from tqdm import tqdm
 
-from dataset import ImageDataset, PointCloudDataset, VoxelDataset
-from model import MLP, CNN, VanillaPointNet, VoxelCNN
+from dataset import ImageDataset, PointCloudDataset, VoxelDataset, MultiViewDataset
+from model import MLP, CNN, VanillaPointNet, VoxelCNN, MultiViewCNN
 from pointnet import PointNetMini, feature_transform_regularizer
 
 torch.manual_seed(1234)
 
 
-DATA_FORMATS = ['single_view','pcd', 'voxel']
+DATA_FORMATS = ['single_view', 'multi_view', 'pcd', 'voxel']
 
 PREFIX = 'train'
 
-DATA_FORMAT = 'pcd'
+DATA_FORMAT = 'multi_view'
+NUM_VIEWS = 4
 ROOT_DIR = '../data/train_{}'.format(DATA_FORMAT)
 DATA_LABELS = '../data/train_meshMNIST/labels.txt'
+
 
 BATCH_SIZE = 128
 EPOCHS = 100
@@ -64,6 +66,14 @@ if __name__ == '__main__':
         test_dataset = ImageDataset(ROOT_DIR, test_lines, filename_format=filename_format, transform=transform)
 
         model = CNN(num_classes=10)
+
+    elif DATA_FORMAT == 'multi_view':
+        filename_format = "{:05d}.npy"
+        train_dataset = MultiViewDataset(ROOT_DIR, train_lines, filename_format=filename_format, num_views=NUM_VIEWS)
+        val_dataset = MultiViewDataset(ROOT_DIR, val_lines, filename_format=filename_format, num_views=NUM_VIEWS)
+        test_dataset = MultiViewDataset(ROOT_DIR, test_lines, filename_format=filename_format, num_views=NUM_VIEWS)
+
+        model = MultiViewCNN(num_classes=10, num_views=NUM_VIEWS)
     
     elif DATA_FORMAT == 'pcd':
         filename_format = "{:05d}.ply"
@@ -84,7 +94,7 @@ if __name__ == '__main__':
     else:
         raise NotImplementedError('Data format not supported')
 
-    device = "cuda"
+    device = "cpu"
     model = model.to(device)
     train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False)

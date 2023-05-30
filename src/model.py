@@ -38,6 +38,38 @@ class CNN(nn.Module):
         return F.log_softmax(x, dim=1)
     
 
+class MultiViewCNN(nn.Module):
+    def __init__(self, num_classes, num_views=12):
+        super().__init__()
+        self.num_views = num_views
+
+        self.conv1 = nn.Conv2d(1, 16, kernel_size=3)
+        self.conv2 = nn.Conv2d(16, 32, kernel_size=3)
+
+        self.fc1 = nn.Linear(1568, 128)
+        self.fc2 = nn.Linear(128, num_classes)
+
+    
+    def forward(self, x):
+        batchsize = x.size()[0]
+        x = x.view(-1, 56, 56)
+        x = x.unsqueeze(dim=1)
+
+        x = F.relu(self.conv1(x))
+        x = F.max_pool2d(x, 4, padding=1)  # 14
+
+        x = F.relu(self.conv2(x))
+        x = F.max_pool2d(x, 2, padding=1) # 7
+
+        x = x.view(batchsize, self.num_views, 32, 7, 7)
+        x = torch.max(x, dim=1)[0]
+        x = torch.flatten(x, start_dim=1)
+
+        x = F.relu(self.fc1(x))
+        x = self.fc2(x)
+        return F.log_softmax(x, dim=1)
+    
+
 class VanillaPointNet(torch.nn.Module):
     """Vanilla PointNet model"""
 
