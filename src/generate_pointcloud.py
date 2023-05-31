@@ -1,5 +1,6 @@
 import open3d as o3d
 import os
+import numpy as np
 
 
 PREFIX = 'train'
@@ -8,6 +9,9 @@ output_dir = '../data/{}_pcd'.format(PREFIX)
 
 idx = 0
 
+RAND = 3
+
+# for filename in ['00001.obj']:
 for filename in os.listdir(mesh_dir):
     name, suffix = filename.split('.')
     
@@ -20,8 +24,18 @@ for filename in os.listdir(mesh_dir):
     f = os.path.join(mesh_dir, filename)
     mesh = o3d.io.read_triangle_mesh(f)
 
+    if RAND:
+        if RAND == 1:
+            axis = (0, np.random.rand() * 360, 0)
+        elif RAND == 3:
+            axis = np.random.rand(3) * 360
+
+        R = mesh.get_rotation_matrix_from_xyz(axis)
+        mesh.rotate(R, center=(0, 0, 0))
+
     pcd = mesh.sample_points_uniformly(number_of_points=2500)
     pcd = mesh.sample_points_poisson_disk(number_of_points=500, pcl=pcd)
+
     # o3d.visualization.draw_geometries([pcd])
 
     o3d.io.write_point_cloud(os.path.join(output_dir, name + '.ply'), pcd, write_ascii=True)

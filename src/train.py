@@ -18,16 +18,18 @@ DATA_FORMATS = ['single_view', 'multi_view', 'multi_view_upright', 'pcd', 'voxel
 
 PREFIX = 'train'
 
-DATA_FORMAT = 'multi_view_upright'
-NUM_VIEWS = 1
-ROOT_DIR = '../data/train_{}'.format(DATA_FORMAT)
+DATA_FORMAT = 'pcd'
+ROOT_DIR = '../data/train_{}_original'.format(DATA_FORMAT)
 DATA_LABELS = '../data/train_meshMNIST/labels.txt'
 
+SAVE_PREDICTIONS = True
 
 BATCH_SIZE = 128
-EPOCHS = 30
+EPOCHS = 20
 
-USE_FEATURE_TRANSFORM = False
+USE_FEATURE_TRANSFORM = False # for PointNet
+NUM_VIEWS = 1 # for MultiView
+
 
 transform = transforms.Compose([
     transforms.ToTensor()
@@ -84,13 +86,15 @@ if __name__ == '__main__':
     
     elif DATA_FORMAT == 'pcd':
         filename_format = "{:05d}.ply"
-        train_dataset = PointCloudDataset(ROOT_DIR, train_lines, filename_format=filename_format, use_augmentation=True)
+        train_dataset = PointCloudDataset(ROOT_DIR, train_lines, filename_format=filename_format)
         val_dataset = PointCloudDataset(ROOT_DIR, val_lines, filename_format=filename_format)
         test_dataset = PointCloudDataset(ROOT_DIR, test_lines, filename_format=filename_format)
 
         # model = VanillaPointNet(num_classes=10)
-        model = PointNetMini(num_classes=10, feature_transform=USE_FEATURE_TRANSFORM)
+        model = PointNetMini(num_classes=10, feature_transform=False)
         optimizer = optim.Adam(model.parameters(), lr=0.003)
+        # model = PointNetMini(num_classes=10, feature_transform=USE_FEATURE_TRANSFORM)
+        # optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-5)
 
     elif DATA_FORMAT == 'voxel':
         filename_format = "{:05d}.npy"
@@ -171,6 +175,9 @@ if __name__ == '__main__':
         model.eval()
         test_loss = 0
         correct = 0
+
+        pred_list = []
+        target_list = []
         with torch.no_grad():
             for batch_idx, (data, target) in enumerate(tqdm(test_loader)):
                 data = data.to(device)
@@ -183,7 +190,17 @@ if __name__ == '__main__':
                 pred = output.argmax(dim=1, keepdim=True)
                 correct += pred.eq(target.view_as(pred)).sum().item()
 
+                if SAVE_PREDICTIONS:
+                    pred_list.append(pred)
+                    target_list.append(target)
+
         test_loss /= len(test_loader.dataset)
         accuracy = 100. * correct / len(test_loader.dataset)
         print('Test set: Average loss: {:.4f}, Accuracy: {}/{} ({:.2f}%)'.format(test_loss, correct, 
                                                                                 len(test_loader.dataset), accuracy))
+
+    if SAVE_PREDICTIONS:
+        y_pred_test = torch.concat(pred_list).to('cpu')
+        y_test = torch.concat(target_list).to('cpu')
+        torch.save(y_pred_test, DATA_FORMAT + "_pred.pt")
+        torch.save(y_test, "target.pt")
