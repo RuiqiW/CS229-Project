@@ -19,16 +19,16 @@ DATA_FORMATS = ['single_view', 'multi_view', 'multi_view_upright', 'pcd', 'voxel
 PREFIX = 'train'
 
 DATA_FORMAT = 'pcd'
-ROOT_DIR = '../data/train_{}_original'.format(DATA_FORMAT)
+ROOT_DIR = '../data/train_{}'.format(DATA_FORMAT)
 DATA_LABELS = '../data/train_meshMNIST/labels.txt'
 
 SAVE_PREDICTIONS = True
 
 BATCH_SIZE = 128
-EPOCHS = 20
+EPOCHS = 100
 
-USE_FEATURE_TRANSFORM = False # for PointNet
-NUM_VIEWS = 1 # for MultiView
+USE_FEATURE_TRANSFORM = True # for PointNet
+NUM_VIEWS = 4 # for MultiView
 
 
 transform = transforms.Compose([
@@ -91,10 +91,9 @@ if __name__ == '__main__':
         test_dataset = PointCloudDataset(ROOT_DIR, test_lines, filename_format=filename_format)
 
         # model = VanillaPointNet(num_classes=10)
-        model = PointNetMini(num_classes=10, feature_transform=False)
-        optimizer = optim.Adam(model.parameters(), lr=0.003)
-        # model = PointNetMini(num_classes=10, feature_transform=USE_FEATURE_TRANSFORM)
-        # optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-5)
+        # optimizer = optim.Adam(model.parameters(), lr=0.003)
+        model = PointNetMini(num_classes=10, feature_transform=USE_FEATURE_TRANSFORM)
+        optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-5)
 
     elif DATA_FORMAT == 'voxel':
         filename_format = "{:05d}.npy"

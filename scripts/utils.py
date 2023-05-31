@@ -29,7 +29,7 @@ if __name__ == '__main__':
     # print(count_parameters(model))
 
 
-    pred = torch.load('../src/pcd_pred.pt').numpy()
+    pred = torch.load('../src/pcd_axis_aligned_pred.pt').numpy()
     target = torch.load('../src/target.pt').numpy()
 
     N = 10
@@ -47,6 +47,6 @@ if __name__ == '__main__':
     sns.heatmap(cf_matrix, annot=labels, fmt='', cmap='Blues')
     plt.ylabel('True Label')
     plt.xlabel('Predicted Label')
-    plt.title('Confusion matrix for axis-aligned point clouds - PointNet wo feature trans')
+    plt.title('Confusion matrix for axis-aligned point clouds - Point Net (wo feature trans)')
     # plt.show()
-    plt.savefig('../plots/cf_matrix_pcd.png')
+    plt.savefig('../plots/cf_matrix_axis_aligned_pcd.png')
