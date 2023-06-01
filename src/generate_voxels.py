@@ -3,14 +3,16 @@ import numpy as np
 import os
 
 
-VOXEL_DIMS = [36, 36, 8]
+VOXEL_DIMS = [36, 36, 36]
+RAND = 1
 
 PREFIX = 'train'
 mesh_dir = '../data/{}_meshMNIST/'.format(PREFIX)
-output_dir = '../data/{}_voxel'.format(PREFIX)
+output_dir = '../data/{}_voxel_upright'.format(PREFIX)
 
 idx = 0
 
+# for filename in ['00001.obj']:
 for filename in os.listdir(mesh_dir):
     name, suffix = filename.split('.')
     
@@ -24,10 +26,22 @@ for filename in os.listdir(mesh_dir):
     f = os.path.join(mesh_dir, filename)
     mesh = o3d.io.read_triangle_mesh(f)
     R = mesh.get_rotation_matrix_from_xyz((np.pi, 0, 0))
-    mesh.rotate(R, center=(0, 0, 0))
+    # mesh.rotate(R, center=(0, 0, 0))
+
+    if RAND:
+        if RAND == 1:
+            axis = (0, np.random.rand() * 360, 0)
+        elif RAND == 3:
+            axis = np.random.rand(3) * 360
+
+        R_rand = mesh.get_rotation_matrix_from_xyz(axis)
+    
+    mesh.rotate(R_rand @ R, center=(0, 0, 0))
 
     voxel_grid = o3d.geometry.VoxelGrid.create_from_triangle_mesh(mesh,
                                                               voxel_size=0.02)
+    
+    # o3d.visualization.draw_geometries([voxel_grid])
 
     # non-zero indices
     indices = [vox.grid_index-1 for vox in voxel_grid.get_voxels()]

@@ -92,8 +92,98 @@ class VanillaPointNet(torch.nn.Module):
     
 
 class VoxelCNN(nn.Module):
+    "3D CNN for isotrophic (36x36x36) voxels"
     def __init__(self, num_classes):
         super(VoxelCNN, self).__init__()
+        self.conv1 = nn.Conv3d(1, 16, kernel_size=3, padding=1)
+        self.fc1 = nn.Linear(1024, 128)
+        self.fc2 = nn.Linear(128, num_classes)
+
+    def forward(self, x):
+        x = x.unsqueeze(dim=1)
+        x = F.relu(self.conv1(x))
+        x = F.max_pool3d(x, kernel_size=(9, 9, 9)) # Cx4x4x4
+        x = x.view(-1, 1024)
+
+        x = F.relu(self.fc1(x))
+        x = self.fc2(x)
+        return F.log_softmax(x, dim=1)
+    
+
+class VoxelCNNProbing(nn.Module):
+    def __init__(self, num_classes):
+        super(VoxelCNNProbing, self).__init__()
+        
+        self.conv1 = nn.Conv3d(1, 4, kernel_size=(1, 1, 36))
+        self.conv2 = nn.Conv3d(1, 1, kernel_size=(4, 1, 1))
+
+        self.conv3 = nn.Conv2d(1, 2, kernel_size=3, padding=1)
+        self.fc1 = nn.Linear(648, 128)
+        self.fc2 = nn.Linear(128, num_classes)
+
+    def forward(self, x):
+        x = x.unsqueeze(dim=1)
+        x = F.relu(self.conv1(x))
+        x = x.squeeze()
+        x = x.unsqueeze(dim=1)
+        x = F.relu(self.conv2(x))
+
+        x = x.squeeze(1)
+        x = F.relu(self.conv3(x)) # 2, 36, 36
+        x = F.max_pool2d(x, 2) # 2, 18, 18
+        x = torch.flatten(x, 1)
+
+        x = self.fc1(x)
+        x = F.relu(x)
+        x = self.fc2(x)
+        return F.log_softmax(x, dim=1)
+
+        
+class VoxelCNNProbingMul(nn.Module):
+    def __init__(self, num_classes):
+        super(VoxelCNNProbingMul, self).__init__()
+        
+        self.conv1 = nn.Conv3d(1, 4, kernel_size=(1, 1, 36))
+        self.conv2 = nn.Conv3d(1, 1, kernel_size=(4, 1, 1))
+
+        self.conv3 = nn.Conv2d(1, 2, kernel_size=3, padding=1)
+        self.fc1 = nn.Linear(648, 128)
+        self.fc2 = nn.Linear(128, num_classes)
+    
+
+    def forward(self, x):
+        x0 = x.unsqueeze(1)
+        x1 = x0.clone()
+        x2 = x0.clone()
+        x1 = x1.permute(0, 1, 3, 4, 2)
+        x2 = x2.permute(0, 1, 4, 2, 3)
+        x = torch.hstack([x0, x1, x2])  # (B, 3, 36, 36, 36)
+        x = x.view(-1, 36, 36, 36)  
+        x = x.unsqueeze(dim=1)  # (Bx3, 1, 36, 36, 36)
+
+        x = F.relu(self.conv1(x))
+        x = x.squeeze()
+        x = x.unsqueeze(dim=1)
+        x = F.relu(self.conv2(x))
+
+        x = x.squeeze() # (Bx3, 36, 36)
+        x = x.view(-1, 3, 36, 36)   # (B, 3, 36, 36)
+        x = torch.max(x, dim=1, keepdim=True)[0]    #(B, 1, 36, 36)
+
+        x = F.relu(self.conv3(x))   # (B, 2, 36, 36)
+        x = F.max_pool2d(x, 2)  # (B, 2, 18, 18)
+        x = torch.flatten(x, 1)
+
+        x = self.fc1(x)
+        x = F.relu(x)
+        x = self.fc2(x)
+        return F.log_softmax(x, dim=1)
+
+
+class VoxelCNNAns(nn.Module):
+    "3D CNN for anistrophic (36x36x8) voxels"
+    def __init__(self, num_classes):
+        super(VoxelCNNAns, self).__init__()
         self.conv1 = nn.Conv3d(1, 16, kernel_size=3, padding=1)
         self.fc1 = nn.Linear(576, 128)
         self.fc2 = nn.Linear(128, num_classes)

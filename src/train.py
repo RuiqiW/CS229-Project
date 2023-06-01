@@ -8,7 +8,7 @@ from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
 from dataset import ImageDataset, PointCloudDataset, VoxelDataset, MultiViewDataset
-from model import MLP, CNN, VanillaPointNet, VoxelCNN, MultiViewCNN
+from model import MLP, CNN, VanillaPointNet, VoxelCNN, MultiViewCNN, VoxelCNNProbing, VoxelCNNProbingMul
 from pointnet import PointNetMini, feature_transform_regularizer
 
 torch.manual_seed(1234)
@@ -18,14 +18,14 @@ DATA_FORMATS = ['single_view', 'multi_view', 'multi_view_upright', 'pcd', 'voxel
 
 PREFIX = 'train'
 
-DATA_FORMAT = 'pcd'
+DATA_FORMAT = 'voxel'
 ROOT_DIR = '../data/train_{}'.format(DATA_FORMAT)
 DATA_LABELS = '../data/train_meshMNIST/labels.txt'
 
-SAVE_PREDICTIONS = True
+SAVE_PREDICTIONS = False
 
 BATCH_SIZE = 128
-EPOCHS = 100
+EPOCHS = 40
 
 USE_FEATURE_TRANSFORM = True # for PointNet
 NUM_VIEWS = 4 # for MultiView
@@ -101,12 +101,12 @@ if __name__ == '__main__':
         val_dataset = VoxelDataset(ROOT_DIR, val_lines, filename_format=filename_format)
         test_dataset = VoxelDataset(ROOT_DIR, test_lines, filename_format=filename_format)
 
-        model = VoxelCNN(num_classes=10)
-        optimizer = optim.Adam(model.parameters(), lr=0.003)
+        model = VoxelCNNProbingMul(num_classes=10)
+        optimizer = optim.Adam(model.parameters(), lr=0.003, weight_decay=1e-5)
     else:
         raise NotImplementedError('Data format not supported')
 
-    device = "cuda"
+    device = "cpu"
     model = model.to(device)
     train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False)
@@ -130,7 +130,7 @@ if __name__ == '__main__':
             target =  target.to(device)
             optimizer.zero_grad()
 
-            if USE_FEATURE_TRANSFORM:
+            if DATA_FORMAT == 'pcd' and USE_FEATURE_TRANSFORM:
                 output, trans = model(data)
             else:
                 output = model(data)
@@ -139,7 +139,7 @@ if __name__ == '__main__':
             pred = output.argmax(dim=1, keepdim=True)
             correct += pred.eq(target.view_as(pred)).sum().item()
 
-            if USE_FEATURE_TRANSFORM:
+            if DATA_FORMAT == 'pcd' and USE_FEATURE_TRANSFORM:
                 loss += 0.001 * feature_transform_regularizer(trans)
             loss.backward()
             optimizer.step()
@@ -156,7 +156,7 @@ if __name__ == '__main__':
             for batch_idx, (data, target) in enumerate(tqdm(val_loader)):
                 data = data.to(device)
                 target = target.to(device)
-                if USE_FEATURE_TRANSFORM:
+                if DATA_FORMAT == 'pcd' and USE_FEATURE_TRANSFORM:
                     output, trans = model(data)
                 else:
                     output = model(data)
@@ -181,7 +181,7 @@ if __name__ == '__main__':
             for batch_idx, (data, target) in enumerate(tqdm(test_loader)):
                 data = data.to(device)
                 target = target.to(device)
-                if USE_FEATURE_TRANSFORM:
+                if DATA_FORMAT == 'pcd' and USE_FEATURE_TRANSFORM:
                     output, trans = model(data)
                 else:
                     output = model(data)
