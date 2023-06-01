@@ -138,40 +138,72 @@ class VoxelCNNProbing(nn.Module):
         x = self.fc2(x)
         return F.log_softmax(x, dim=1)
 
+
+class VoxelCNNProbingSub(nn.Module):
+    def __init__(self):
+        super(VoxelCNNProbingSub, self).__init__()
+        self.conv1 = nn.Conv3d(1, 4, kernel_size=(1, 1, 36))
+        self.conv2 = nn.Conv3d(1, 1, kernel_size=(4, 1, 1))
+    
+    def forward(self, x):
+        x = F.relu(self.conv1(x))
+        x = x.squeeze()
+        x = x.unsqueeze(dim=1)
+        x = F.relu(self.conv2(x))
+        x = x.squeeze(1)    # (B, 1, 36, 36)
+
+        return x
         
 class VoxelCNNProbingMul(nn.Module):
     def __init__(self, num_classes):
         super(VoxelCNNProbingMul, self).__init__()
         
-        self.conv1 = nn.Conv3d(1, 4, kernel_size=(1, 1, 36))
-        self.conv2 = nn.Conv3d(1, 1, kernel_size=(4, 1, 1))
+        # self.conv1 = nn.Conv3d(1, 4, kernel_size=(1, 1, 36))
+        # self.conv2 = nn.Conv3d(1, 1, kernel_size=(4, 1, 1))
 
-        self.conv3 = nn.Conv2d(1, 2, kernel_size=3, padding=1)
+        self.nn1 = VoxelCNNProbingSub()
+        self.nn2 = VoxelCNNProbingSub()
+        self.nn3 = VoxelCNNProbingSub()
+
+        self.conv3 = nn.Conv2d(1, 8, kernel_size=3, padding=1)
         self.fc1 = nn.Linear(648, 128)
         self.fc2 = nn.Linear(128, num_classes)
     
 
     def forward(self, x):
+        # x0 = x.unsqueeze(1)
+        # x1 = x0.clone()
+        # x2 = x0.clone()
+        # x1 = x1.permute(0, 1, 3, 4, 2)
+        # x2 = x2.permute(0, 1, 4, 2, 3)
+        # x = torch.hstack([x0, x1, x2])  # (B, 3, 36, 36, 36)
+        # x = x.view(-1, 36, 36, 36)  
+        # x = x.unsqueeze(dim=1)  # (Bx3, 1, 36, 36, 36)
+
+        # x = F.relu(self.conv1(x))
+        # x = x.squeeze()
+        # x = x.unsqueeze(dim=1)
+        # x = F.relu(self.conv2(x))
+
+        # x = x.squeeze() # (Bx3, 36, 36)
+        # x = x.view(-1, 3, 36, 36)   # (B, 3, 36, 36)
+        # x = torch.max(x, dim=1, keepdim=True)[0]    #(B, 1, 36, 36)
+
         x0 = x.unsqueeze(1)
         x1 = x0.clone()
         x2 = x0.clone()
         x1 = x1.permute(0, 1, 3, 4, 2)
         x2 = x2.permute(0, 1, 4, 2, 3)
-        x = torch.hstack([x0, x1, x2])  # (B, 3, 36, 36, 36)
-        x = x.view(-1, 36, 36, 36)  
-        x = x.unsqueeze(dim=1)  # (Bx3, 1, 36, 36, 36)
 
-        x = F.relu(self.conv1(x))
-        x = x.squeeze()
-        x = x.unsqueeze(dim=1)
-        x = F.relu(self.conv2(x))
+        x0 = self.nn1(x0)
+        x1 = self.nn2(x1)
+        x2 = self.nn3(x2)
 
-        x = x.squeeze() # (Bx3, 36, 36)
-        x = x.view(-1, 3, 36, 36)   # (B, 3, 36, 36)
-        x = torch.max(x, dim=1, keepdim=True)[0]    #(B, 1, 36, 36)
+        x = torch.hstack([x0, x1, x2]) # B, 3, 36, 36
+        x = torch.max(x, dim=1, keepdim=True)[0]
 
-        x = F.relu(self.conv3(x))   # (B, 2, 36, 36)
-        x = F.max_pool2d(x, 2)  # (B, 2, 18, 18)
+        x = F.relu(self.conv3(x))   # (B, 8, 36, 36)
+        x = F.max_pool2d(x, 4)  # (B, 8, 9, 9)
         x = torch.flatten(x, 1)
 
         x = self.fc1(x)

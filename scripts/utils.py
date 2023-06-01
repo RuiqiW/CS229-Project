@@ -2,7 +2,7 @@ import torch
 
 import sys
 sys.path.append("../src")
-from model import MLP, CNN, VanillaPointNet, VoxelCNN, MultiViewCNN
+from model import MLP, CNN, VanillaPointNet, VoxelCNN, MultiViewCNN, VoxelCNNProbing, VoxelCNNProbingMul
 from pointnet import PointNetMini
 
 
@@ -15,5 +15,5 @@ def count_parameters(model):
 
 if __name__ == '__main__':
     # # model = PointNetMini(num_classes=10, feature_transform=True)
-    model = MultiViewCNN(num_classes=10)
+    model = VoxelCNNProbingMul(num_classes=10)
     print(count_parameters(model))

@@ -11,6 +11,8 @@ from dataset import ImageDataset, PointCloudDataset, VoxelDataset, MultiViewData
 from model import MLP, CNN, VanillaPointNet, VoxelCNN, MultiViewCNN, VoxelCNNProbing, VoxelCNNProbingMul
 from pointnet import PointNetMini, feature_transform_regularizer
 
+from sys import platform
+
 torch.manual_seed(1234)
 
 
@@ -19,10 +21,10 @@ DATA_FORMATS = ['single_view', 'multi_view', 'multi_view_upright', 'pcd', 'voxel
 PREFIX = 'train'
 
 DATA_FORMAT = 'voxel'
-ROOT_DIR = '../data/train_{}'.format(DATA_FORMAT)
+ROOT_DIR = '../data/train_{}_upright'.format(DATA_FORMAT)
 DATA_LABELS = '../data/train_meshMNIST/labels.txt'
 
-SAVE_PREDICTIONS = False
+SAVE_PREDICTIONS = True
 
 BATCH_SIZE = 128
 EPOCHS = 40
@@ -101,12 +103,18 @@ if __name__ == '__main__':
         val_dataset = VoxelDataset(ROOT_DIR, val_lines, filename_format=filename_format)
         test_dataset = VoxelDataset(ROOT_DIR, test_lines, filename_format=filename_format)
 
-        model = VoxelCNNProbingMul(num_classes=10)
+        model = VoxelCNNProbing(num_classes=10)
         optimizer = optim.Adam(model.parameters(), lr=0.003, weight_decay=1e-5)
+        # model = VoxelCNNProbingMul(num_classes=10)
+        # optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-5)
     else:
         raise NotImplementedError('Data format not supported')
 
-    device = "cpu"
+    if platform == 'linux':
+        device = "cuda"
+    else:
+        device = "cpu"
+    
     model = model.to(device)
     train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False)
@@ -201,5 +209,5 @@ if __name__ == '__main__':
     if SAVE_PREDICTIONS:
         y_pred_test = torch.concat(pred_list).to('cpu')
         y_test = torch.concat(target_list).to('cpu')
-        torch.save(y_pred_test, DATA_FORMAT + "_pred.pt")
+        torch.save(y_pred_test, DATA_FORMAT + "_pred_upright.pt")
         torch.save(y_test, "target.pt")
