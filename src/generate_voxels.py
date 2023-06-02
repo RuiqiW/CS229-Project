@@ -8,7 +8,7 @@ RAND = 1
 
 PREFIX = 'train'
 mesh_dir = '../data/{}_meshMNIST/'.format(PREFIX)
-output_dir = '../data/{}_voxel_upright'.format(PREFIX)
+output_dir = '../data/{}_voxel'.format(PREFIX)
 
 idx = 0
 
@@ -51,6 +51,23 @@ for filename in os.listdir(mesh_dir):
     arr = np.zeros(size).astype(np.int8)
     for grid_idx in indices:
         arr[tuple(grid_idx)] = 1
+
+    for i in range(3):
+        if size[i] > VOXEL_DIMS[i]:
+            start = (size[i] - VOXEL_DIMS[i]) // 2
+            end = -(size[i] - VOXEL_DIMS[i] - start)
+
+            print(start, end)
+
+            if i == 0:
+                arr = arr[start:end, : , :]
+            elif i == 1:
+                arr = arr[:, start:end, :]
+            elif i == 2:
+                arr = arr[:, :, start:end]
+
+
+    size = np.clip(size, 0, VOXEL_DIMS)
 
     # pad voxel grid
     pad_width = [((VOXEL_DIMS[i] - size[i]) // 2, (VOXEL_DIMS[i] - size[i] + 1) // 2) for i in range(3)]
