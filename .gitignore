@@ -5,6 +5,7 @@ data/
 plots/
 runs/
 *.zip
+*.pt
 
 # Distribution / packaging
 .Python
