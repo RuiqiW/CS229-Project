@@ -21,13 +21,14 @@ DATA_FORMATS = ['single_view', 'multi_view', 'multi_view_upright', 'pcd', 'voxel
 PREFIX = 'train'
 
 DATA_FORMAT = 'voxel'
-ROOT_DIR = '../data/train_{}_upright'.format(DATA_FORMAT)
+ROOT_DIR = '../data/train_{}_original'.format(DATA_FORMAT)
 DATA_LABELS = '../data/train_meshMNIST/labels.txt'
 
 SAVE_PREDICTIONS = True
 
 BATCH_SIZE = 128
 EPOCHS = 40
+USE_SCHEDULER = 0
 
 USE_FEATURE_TRANSFORM = True # for PointNet
 NUM_VIEWS = 4 # for MultiView
@@ -95,7 +96,7 @@ if __name__ == '__main__':
         # model = VanillaPointNet(num_classes=10)
         # optimizer = optim.Adam(model.parameters(), lr=0.003)
         model = PointNetMini(num_classes=10, feature_transform=USE_FEATURE_TRANSFORM)
-        optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-5)
+        optimizer = optim.Adam(model.parameters(), lr=0.0003, weight_decay=1e-5)
 
     elif DATA_FORMAT == 'voxel':
         filename_format = "{:05d}.npy"
@@ -103,8 +104,8 @@ if __name__ == '__main__':
         val_dataset = VoxelDataset(ROOT_DIR, val_lines, filename_format=filename_format)
         test_dataset = VoxelDataset(ROOT_DIR, test_lines, filename_format=filename_format)
 
-        model = VoxelCNNProbing(num_classes=10)
-        optimizer = optim.Adam(model.parameters(), lr=0.003, weight_decay=1e-5)
+        model = VoxelCNNProbingMul(num_classes=10)
+        optimizer = optim.Adam(model.parameters(), lr=0.003)
         # model = VoxelCNNProbingMul(num_classes=10)
         # optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-5)
     else:
@@ -126,6 +127,8 @@ if __name__ == '__main__':
     print("data format: ", DATA_FORMAT)
     print("model: ", model.__class__.__name__)
 
+    if USE_SCHEDULER:
+        scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=USE_SCHEDULER, gamma=0.3)
 
     for epoch in range(EPOCHS):
         print("Epoch {} / {}".format(epoch+1, EPOCHS))
@@ -151,6 +154,8 @@ if __name__ == '__main__':
                 loss += 0.001 * feature_transform_regularizer(trans)
             loss.backward()
             optimizer.step()
+        if USE_SCHEDULER:
+            scheduler.step()
 
         print("Training Loss: {}, Training Accuracy: {}%".format( train_loss  / len(train_loader.dataset), 
               correct * 100 / len(train_loader.dataset)))

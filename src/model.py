@@ -140,9 +140,14 @@ class VoxelCNNProbing(nn.Module):
 
 
 class VoxelCNNProbingSub(nn.Module):
-    def __init__(self):
+    def __init__(self, axis=0):
         super(VoxelCNNProbingSub, self).__init__()
-        self.conv1 = nn.Conv3d(1, 4, kernel_size=(1, 1, 36))
+        if axis == 0:
+            self.conv1 = nn.Conv3d(1, 4, kernel_size=(1, 1, 36))
+        elif axis == 1:
+            self.conv1 = nn.Conv3d(1, 4, kernel_size=(1, 36, 1))
+        else:
+            self.conv1 = nn.Conv3d(1, 4, kernel_size=(36, 1, 1))
         self.conv2 = nn.Conv3d(1, 1, kernel_size=(4, 1, 1))
     
     def forward(self, x):
@@ -161,9 +166,9 @@ class VoxelCNNProbingMul(nn.Module):
         # self.conv1 = nn.Conv3d(1, 4, kernel_size=(1, 1, 36))
         # self.conv2 = nn.Conv3d(1, 1, kernel_size=(4, 1, 1))
 
-        self.nn1 = VoxelCNNProbingSub()
-        self.nn2 = VoxelCNNProbingSub()
-        self.nn3 = VoxelCNNProbingSub()
+        self.nn1 = VoxelCNNProbingSub(axis=0)
+        self.nn2 = VoxelCNNProbingSub(axis=1)
+        self.nn3 = VoxelCNNProbingSub(axis=2)
 
         self.conv3 = nn.Conv2d(1, 8, kernel_size=3, padding=1)
         self.fc1 = nn.Linear(648, 128)
@@ -192,8 +197,8 @@ class VoxelCNNProbingMul(nn.Module):
         x0 = x.unsqueeze(1)
         x1 = x0.clone()
         x2 = x0.clone()
-        x1 = x1.permute(0, 1, 3, 4, 2)
-        x2 = x2.permute(0, 1, 4, 2, 3)
+        # x1 = x1.permute(0, 1, 3, 4, 2)
+        # x2 = x2.permute(0, 1, 4, 2, 3)
 
         x0 = self.nn1(x0)
         x1 = self.nn2(x1)
