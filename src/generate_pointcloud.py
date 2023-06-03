@@ -3,14 +3,15 @@ import os
 import numpy as np
 
 
+
+RAND = True
 PREFIX = 'train'
 mesh_dir = '../data/{}_meshMNIST/'.format(PREFIX)
 output_dir = '../data/{}_pcd'.format(PREFIX)
+rot_mat_dir = '../data/{}_rotations'.format(PREFIX)
+
 
 idx = 0
-
-RAND = 3
-
 # for filename in ['00001.obj']:
 for filename in os.listdir(mesh_dir):
     name, suffix = filename.split('.')
@@ -25,13 +26,12 @@ for filename in os.listdir(mesh_dir):
     mesh = o3d.io.read_triangle_mesh(f)
 
     if RAND:
-        if RAND == 1:
-            axis = (0, np.random.rand() * 360, 0)
-        elif RAND == 3:
-            axis = np.random.rand(3) * 360
+        # axis = (0, np.random.rand() * 360, 0)
+        # R = mesh.get_rotation_matrix_from_xyz(axis)
+        R = np.load(os.path.join(rot_mat_dir, name + ".npy"))
+        mesh.rotate(R, center=mesh.get_center())
 
-        R = mesh.get_rotation_matrix_from_xyz(axis)
-        mesh.rotate(R, center=(0, 0, 0))
+    # o3d.visualization.draw_geometries([mesh])
 
     pcd = mesh.sample_points_uniformly(number_of_points=2500)
     pcd = mesh.sample_points_poisson_disk(number_of_points=500, pcl=pcd)

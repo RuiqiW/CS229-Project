@@ -13,7 +13,7 @@ import os
 
 
 W, H = 112, 112
-RAND = False
+RAND = True
 
 def qvec2rotmat(qvec):
     return np.array([
@@ -42,7 +42,8 @@ def axis_angle_to_quaternion(axis, angle):
 
 PREFIX = 'train'
 mesh_dir = '../data/{}_meshMNIST/'.format(PREFIX)
-output_dir = '../data/{}_multi_view_upright'.format(PREFIX)
+output_dir = '../data/{}_multi_view'.format(PREFIX)
+rot_mat_dir = '../data/{}_rotations'.format(PREFIX)
 
 renderer = pyrender.OffscreenRenderer(W, H)
 pyrender_camera = pyrender.camera.OrthographicCamera(1.0, 1.0)
@@ -54,7 +55,7 @@ T[0:3, 3] = np.array([0.5, 0.5, -1])
 
 rot_matrices = []
 
-for axis in [[1, 0, 0], [0, 1, 0], [0, 0, 1]]:
+for axis in [[1, 0, 0], [0, 1, 0]]:
     for angle in [0, 90, 180, 270]:
         qvec = axis_angle_to_quaternion(axis, angle)
         R = qvec2rotmat(qvec)
@@ -64,7 +65,7 @@ for axis in [[1, 0, 0], [0, 1, 0], [0, 0, 1]]:
 
 
 idx = 0
-# for filename in ['00001.obj', '00002.obj']:
+# for filename in ['00001.obj']:
 for filename in os.listdir(mesh_dir):
     name, suffix = filename.split('.')
     # print(name)
@@ -96,6 +97,8 @@ for filename in os.listdir(mesh_dir):
         R = qvec2rotmat(q)
         rot = np.identity(4)
         rot[0:3, 0:3] = R
+
+        np.save(os.path.join(rot_mat_dir, name + ".npy"), R)
 
     else:
         angle = np.random.rand() * 360

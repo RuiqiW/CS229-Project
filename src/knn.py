@@ -28,8 +28,8 @@ threshold = 0.02
 
 
 DATA_LABELS = '../data/train_meshMNIST/labels.txt'
-DATA_FORMAT = 'multi_view_upright'
-ROOT_DIR = '../data/train_{}'.format(DATA_FORMAT)
+DATA_FORMAT = 'voxel'
+ROOT_DIR = '../data/train_{}_upright'.format(DATA_FORMAT)
 
 
 def get_data(data_path):
@@ -41,7 +41,7 @@ def get_data(data_path):
             data = np.array(Image.open(f).convert('L'))
     elif DATA_FORMAT == 'voxel':
         with open(data_path, 'rb') as f:
-            data = np.load(f)
+            data = np.load(f).astype(np.float32)
     elif DATA_FORMAT == 'pcd':
         pcd = o3d.io.read_point_cloud(data_path)
         data = np.asarray(pcd.points)
@@ -181,7 +181,7 @@ if __name__ == '__main__':
         pca = make_pipeline(StandardScaler(), PCA(n_components=n_components, random_state=random_state))
 
         # Reduce dimension with LinearDiscriminantAnalysis
-        lda = make_pipeline(StandardScaler(), LinearDiscriminantAnalysis(n_components=n_components))
+        lda = make_pipeline(StandardScaler(), LinearDiscriminantAnalysis(n_components=n_components, priors= [0.1] * 10, tol=0.001))
 
         # Reduce dimension with NeighborhoodComponentAnalysis
         nca = make_pipeline(
@@ -218,5 +218,7 @@ if __name__ == '__main__':
             plt.title(
                 "{}, KNN (k={})\nTest accuracy = {:.4f}".format(name, n_neighbors, acc_knn)
             )
+
+            # plt.savefig("{}_{}.png".format(name, DATA_FORMAT))
             plt.show()
 
