@@ -20,14 +20,14 @@ DATA_FORMATS = ['single_view', 'multi_view', 'multi_view_upright', 'pcd', 'voxel
 
 PREFIX = 'train'
 
-DATA_FORMAT = 'voxel'
-ROOT_DIR = '../data/train_{}_original'.format(DATA_FORMAT)
+DATA_FORMAT = 'pcd'
+ROOT_DIR = '../data/train_{}'.format(DATA_FORMAT)
 DATA_LABELS = '../data/train_meshMNIST/labels.txt'
 
 SAVE_PREDICTIONS = True
 
-BATCH_SIZE = 128
-EPOCHS = 40
+BATCH_SIZE = 256
+EPOCHS = 150
 USE_SCHEDULER = 0
 
 USE_FEATURE_TRANSFORM = True # for PointNet
@@ -82,7 +82,7 @@ if __name__ == '__main__':
 
         if NUM_VIEWS > 1:
             model = MultiViewCNN(num_classes=10, num_views=NUM_VIEWS)
-            optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-5)
+            optimizer = optim.Adam(model.parameters(), lr=0.0003, weight_decay=1e-5)
         else:
             model = CNN(num_classes=10)
             optimizer = optim.Adam(model.parameters(), lr=0.003)
@@ -96,7 +96,7 @@ if __name__ == '__main__':
         # model = VanillaPointNet(num_classes=10)
         # optimizer = optim.Adam(model.parameters(), lr=0.003)
         model = PointNetMini(num_classes=10, feature_transform=USE_FEATURE_TRANSFORM)
-        optimizer = optim.Adam(model.parameters(), lr=0.0003, weight_decay=1e-5)
+        optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-5)
 
     elif DATA_FORMAT == 'voxel':
         filename_format = "{:05d}.npy"
@@ -214,5 +214,5 @@ if __name__ == '__main__':
     if SAVE_PREDICTIONS:
         y_pred_test = torch.concat(pred_list).to('cpu')
         y_test = torch.concat(target_list).to('cpu')
-        torch.save(y_pred_test, DATA_FORMAT + "_pred_upright.pt")
+        torch.save(y_pred_test, DATA_FORMAT + "_pred.pt")
         torch.save(y_test, "target.pt")
