@@ -148,6 +148,8 @@ class VoxelDataset(Dataset):
 
         with open(data_path, 'rb') as f:
             voxels = np.load(f)
+            if voxels.shape[0] == 44:
+                voxels = voxels[4:40, 4:40, 4:40]
 
         voxels = torch.from_numpy(voxels).float()
 
