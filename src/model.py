@@ -169,6 +169,9 @@ class VoxelCNNProbingMul(nn.Module):
         self.nn1 = VoxelCNNProbingSub(axis=0)
         self.nn2 = VoxelCNNProbingSub(axis=1)
         self.nn3 = VoxelCNNProbingSub(axis=2)
+        self.nn4 = VoxelCNNProbingSub(axis=0)
+        self.nn5 = VoxelCNNProbingSub(axis=1)
+        self.nn6 = VoxelCNNProbingSub(axis=2)
 
         self.conv3 = nn.Conv2d(1, 8, kernel_size=3, padding=1)
         self.fc1 = nn.Linear(648, 128)
@@ -197,14 +200,20 @@ class VoxelCNNProbingMul(nn.Module):
         x0 = x.unsqueeze(1)
         x1 = x0.clone()
         x2 = x0.clone()
+        x3 = x0.clone()
+        x4 = x0.clone()
+        x5 = x0.clone()
         # x1 = x1.permute(0, 1, 3, 4, 2)
         # x2 = x2.permute(0, 1, 4, 2, 3)
 
         x0 = self.nn1(x0)
         x1 = self.nn2(x1)
         x2 = self.nn3(x2)
+        x3 = self.nn4(x3)
+        x4 = self.nn5(x4)
+        x5 = self.nn6(x5)
 
-        x = torch.hstack([x0, x1, x2]) # B, 3, 36, 36
+        x = torch.hstack([x0, x1, x2, x3, x4, x5]) # B, 3, 36, 36
         x = torch.max(x, dim=1, keepdim=True)[0]
 
         x = F.relu(self.conv3(x))   # (B, 8, 36, 36)
