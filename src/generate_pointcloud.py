@@ -4,10 +4,11 @@ import numpy as np
 
 
 
-RAND = True
+RAND = False
+GEN_NORMAL = True
 PREFIX = 'train'
 mesh_dir = '../data/{}_meshMNIST/'.format(PREFIX)
-output_dir = '../data/{}_pcd'.format(PREFIX)
+output_dir = '../data/{}_pcd_original_n'.format(PREFIX)
 rot_mat_dir = '../data/{}_rotations'.format(PREFIX)
 
 
@@ -24,6 +25,10 @@ for filename in os.listdir(mesh_dir):
 
     f = os.path.join(mesh_dir, filename)
     mesh = o3d.io.read_triangle_mesh(f)
+    
+    if GEN_NORMAL:
+        mesh.compute_vertex_normals()
+        mesh.compute_triangle_normals()
 
     if RAND:
         # axis = (0, np.random.rand() * 360, 0)
