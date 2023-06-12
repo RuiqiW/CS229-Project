@@ -182,31 +182,31 @@ if __name__ == '__main__':
             
 
 
-        model.eval()
-        test_loss = 0
-        correct = 0
+    model.eval()
+    test_loss = 0
+    correct = 0
 
-        pred_list = []
-        target_list = []
-        with torch.no_grad():
-            for batch_idx, (data, target) in enumerate(tqdm(test_loader)):
-                data = data.to(device)
-                target = target.to(device)
-                if DATA_FORMAT == 'pcd' and USE_FEATURE_TRANSFORM:
-                    output, trans = model(data)
-                else:
-                    output = model(data)
-                test_loss += criterion(output, target)
-                pred = output.argmax(dim=1, keepdim=True)
-                correct += pred.eq(target.view_as(pred)).sum().item()
+    pred_list = []
+    target_list = []
+    with torch.no_grad():
+        for batch_idx, (data, target) in enumerate(tqdm(test_loader)):
+            data = data.to(device)
+            target = target.to(device)
+            if DATA_FORMAT == 'pcd' and USE_FEATURE_TRANSFORM:
+                output, trans = model(data)
+            else:
+                output = model(data)
+            test_loss += criterion(output, target)
+            pred = output.argmax(dim=1, keepdim=True)
+            correct += pred.eq(target.view_as(pred)).sum().item()
 
-                if SAVE_PREDICTIONS:
-                    pred_list.append(pred)
-                    target_list.append(target)
+            if SAVE_PREDICTIONS:
+                pred_list.append(pred)
+                target_list.append(target)
 
-        test_loss /= len(test_loader.dataset)
-        accuracy = 100. * correct / len(test_loader.dataset)
-        print('Test set: Average loss: {:.4f}, Accuracy: {}/{} ({:.2f}%)'.format(test_loss, correct, 
+    test_loss /= len(test_loader.dataset)
+    accuracy = 100. * correct / len(test_loader.dataset)
+    print('Test set: Average loss: {:.4f}, Accuracy: {}/{} ({:.2f}%)'.format(test_loss, correct, 
                                                                                 len(test_loader.dataset), accuracy))
 
     if SAVE_PREDICTIONS:
