@@ -13,7 +13,7 @@ import os
 
 
 W, H = 112, 112
-RAND = True
+RAND = 0
 
 def qvec2rotmat(qvec):
     return np.array([
@@ -42,7 +42,7 @@ def axis_angle_to_quaternion(axis, angle):
 
 PREFIX = 'train'
 mesh_dir = '../data/{}_meshMNIST/'.format(PREFIX)
-output_dir = '../data/{}_multi_view'.format(PREFIX)
+output_dir = '../data/{}_multi_view_original'.format(PREFIX)
 rot_mat_dir = '../data/{}_rotations'.format(PREFIX)
 
 renderer = pyrender.OffscreenRenderer(W, H)
@@ -90,7 +90,7 @@ for filename in os.listdir(mesh_dir):
     t2 = np.identity(4)
     t2[0:3, 3] = mesh.centroid
 
-    if RAND:
+    if RAND == 3:
         # Generate random pose
         q = np.random.randn(4)
         q /= np.linalg.norm(q)
@@ -100,7 +100,7 @@ for filename in os.listdir(mesh_dir):
 
         np.save(os.path.join(rot_mat_dir, name + ".npy"), R)
 
-    else:
+    elif RAND == 1:
         angle = np.random.rand() * 360
 
         qvec = axis_angle_to_quaternion([0, 1, 0], angle)
@@ -114,10 +114,12 @@ for filename in os.listdir(mesh_dir):
     images = []
     for i in range(len(rot_matrices)):
         R = rot_matrices[i]
-        if RAND:
+        if RAND == 3:
+            pose = t2 @ R @ rot @ t1
+        elif RAND == 1:
             pose = t2 @ R @ rot @ t1
         else:
-            pose = t2 @ R @ rot @ t1
+            pose = t2 @ R @ t1
         scene.set_pose(node, pose)
 
         # pyrender.Viewer(scene, use_raymond_lighting=True)

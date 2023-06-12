@@ -28,7 +28,7 @@ threshold = 0.02
 
 
 DATA_LABELS = '../data/train_meshMNIST/labels.txt'
-DATA_FORMAT = 'multi_view'
+DATA_FORMAT = 'pcd'
 ROOT_DIR = '../data/train_{}'.format(DATA_FORMAT)
 
 
@@ -50,8 +50,14 @@ def get_data(data_path):
             data = np.load(f)[0, :, :]
     return data.flatten()
 
+idx = 0
 
 def compute_icp_and_hausdorff_distance(pcd1, pcd2):
+    global idx
+    idx += 1
+    if idx % 31364 == 0:
+        print(idx / 31364)
+        
     source = o3d.geometry.PointCloud()
     source.points = o3d.utility.Vector3dVector(pcd1.reshape(-1, 3))
 
@@ -68,7 +74,6 @@ def compute_icp_and_hausdorff_distance(pcd1, pcd2):
     D = o3d.geometry.PointCloud.compute_point_cloud_distance(source, target)
     return np.max(np.asarray(D))
 
-idx = 0
 
 def compute_hausdorff_distance(pcd1, pcd2):
     global idx
@@ -166,7 +171,7 @@ if __name__ == '__main__':
 
 
     if DATA_FORMAT == 'pcd':
-        knn = KNeighborsClassifier(n_neighbors=n_neighbors, metric=compute_hausdorff_distance)
+        knn = KNeighborsClassifier(n_neighbors=n_neighbors, metric=compute_icp_and_hausdorff_distance)
         knn.fit(X_train, y_train)
         print("fitted")
         acc_knn = knn.score(X_test, y_test)
