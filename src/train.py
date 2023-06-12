@@ -8,7 +8,7 @@ from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
 from dataset import ImageDataset, PointCloudDataset, VoxelDataset, MultiViewDataset
-from model import MLP, CNN, VanillaPointNet, VoxelCNN, MultiViewCNN, VoxelCNNProbing, VoxelCNNProbingMul
+from model import *
 from pointnet import PointNetMini, feature_transform_regularizer
 
 from sys import platform
@@ -16,18 +16,18 @@ from sys import platform
 torch.manual_seed(1234)
 
 
-DATA_FORMATS = ['single_view', 'multi_view', 'multi_view_upright', 'pcd', 'voxel']
+DATA_FORMATS = ['single_view', 'multi_view', 'pcd', 'voxel']
 
 PREFIX = 'train'
 
 DATA_FORMAT = 'pcd'
-ROOT_DIR = '../data/train_{}'.format(DATA_FORMAT)
+ROOT_DIR = '../data/train_{}_large'.format(DATA_FORMAT)
 DATA_LABELS = '../data/train_meshMNIST/labels.txt'
 
 SAVE_PREDICTIONS = True
 
-BATCH_SIZE = 256
-EPOCHS = 150
+BATCH_SIZE = 128
+EPOCHS = 100
 USE_SCHEDULER = 0
 
 USE_FEATURE_TRANSFORM = True # for PointNet
@@ -74,7 +74,7 @@ if __name__ == '__main__':
         model = CNN(num_classes=10)
         optimizer = optim.Adam(model.parameters(), lr=0.003)
 
-    elif DATA_FORMAT == 'multi_view' or DATA_FORMAT == 'multi_view_upright':
+    elif DATA_FORMAT == 'multi_view':
         filename_format = "{:05d}.npy"
         train_dataset = MultiViewDataset(ROOT_DIR, train_lines, filename_format=filename_format, num_views=NUM_VIEWS)
         val_dataset = MultiViewDataset(ROOT_DIR, val_lines, filename_format=filename_format, num_views=NUM_VIEWS)
@@ -105,9 +105,7 @@ if __name__ == '__main__':
         test_dataset = VoxelDataset(ROOT_DIR, test_lines, filename_format=filename_format)
 
         model = VoxelCNNProbingMul(num_classes=10)
-        optimizer = optim.Adam(model.parameters(), lr=0.003)
-        # model = VoxelCNNProbingMul(num_classes=10)
-        # optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-5)
+        optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-5)
     else:
         raise NotImplementedError('Data format not supported')
 
